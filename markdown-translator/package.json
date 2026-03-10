@@ -5,7 +5,8 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "test": "node --test test/frontmatterAliases.test.js"
+    "test": "node --test test/frontmatterAliases.test.js",
+    "convert:glossary:ja": "python3 scripts/convert-glossary-csv.py"
   },
   "dependencies": {
     "@google-cloud/translate": "^9.2.1",
