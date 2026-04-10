@@ -30,6 +30,7 @@ const pSum = {
 
 export const gcpTranslator = async (filePath, outputFilePath) => {
   const mdFileContent = fs.readFileSync(filePath);
+  const sourceMarkdown = mdFileContent.toString();
   const mdAst = fromMarkdown(mdFileContent, {
     // extensions: [frontmatter(["yaml", "toml"]), gfmTable, gfm()],
     extensions: [frontmatter(["yaml", "toml"]), gfm()],
@@ -76,7 +77,8 @@ export const gcpTranslator = async (filePath, outputFilePath) => {
     ],
   });
   const result = normalizeStandaloneCustomContentIndentation(
-    newFile.replaceAll(/(#+.+)(\\{)(#.+})/g, `$1{$3`)
+    newFile.replaceAll(/(#+.+)(\\{)(#.+})/g, `$1{$3`),
+    sourceMarkdown
   );
   writeFileSync(outputFilePath, result);
 };

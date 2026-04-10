@@ -116,3 +116,56 @@ test("keeps already-correct nested CustomContent indentation unchanged", () => {
 
   assert.equal(normalizeStandaloneCustomContentIndentation(input), input);
 });
+
+test("restores standalone CustomContent indentation from the source markdown", () => {
+  const source = [
+    "- **Multi-Cloud Support**",
+    "",
+    "    <CustomContent language=\"en,zh\">",
+    "",
+    "    Stay flexible.",
+    "",
+    "    </CustomContent>",
+    "",
+    "    <CustomContent language=\"ja\">",
+    "",
+    "    Stay flexible.",
+    "",
+    "    </CustomContent>",
+  ].join("\n");
+  const input = [
+    "-   **Multi-Cloud Support**",
+    "",
+    "      <CustomContent language=\"en,zh\">",
+    "",
+    "    柔軟性を維持できます。",
+    "",
+    "      </CustomContent>",
+    "",
+    "      <CustomContent language=\"ja\">",
+    "",
+    "    柔軟性を維持できます。",
+    "",
+    "      </CustomContent>",
+  ].join("\n");
+  const expected = [
+    "-   **Multi-Cloud Support**",
+    "",
+    "    <CustomContent language=\"en,zh\">",
+    "",
+    "    柔軟性を維持できます。",
+    "",
+    "    </CustomContent>",
+    "",
+    "    <CustomContent language=\"ja\">",
+    "",
+    "    柔軟性を維持できます。",
+    "",
+    "    </CustomContent>",
+  ].join("\n");
+
+  assert.equal(
+    normalizeStandaloneCustomContentIndentation(input, source),
+    expected
+  );
+});

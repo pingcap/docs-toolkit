@@ -57,9 +57,14 @@ export async function translateSingleText(
   if (!contents || typeof contents !== "string") {
     return [""];
   }
-  if (/^<span translate="no">([0-9]+)<\/span>$/.test(contents)) {
+  const trimmed = contents.trim();
+  if (
+    /^<span\b[^>]*translate=["']no["'][^>]*>\s*(?:[0-9]+|\{\{B-PLACEHOLDER-[0-9]+-PLACEHOLDER-E\}\})\s*<\/span>$/i.test(
+      trimmed
+    )
+  ) {
     console.log(">>>gcp **NO** translate >>> ", ...contents);
-    return [contents];
+    return [trimmed];
   }
   if (
     contents.startsWith(`{{< copyable`) ||

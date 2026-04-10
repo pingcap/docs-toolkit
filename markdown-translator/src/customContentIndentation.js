@@ -76,7 +76,62 @@ const findInnerContentIndent = (lines, fenceMask, openIndex, closeIndex) => {
   return null;
 };
 
-export const normalizeStandaloneCustomContentIndentation = (markdown = "") => {
+const collectSourceStandaloneCustomContentIndents = (sourceMarkdown = "") => {
+  const sourceLines = sourceMarkdown.split("\n");
+  const sourceFenceMask = getFenceMask(sourceLines);
+
+  return sourceLines.reduce((entries, line, index) => {
+    if (sourceFenceMask[index] || !isStandaloneCustomContentLine(line)) {
+      return entries;
+    }
+
+    entries.push({
+      value: line.trim(),
+      indent: getLeadingSpaces(line),
+    });
+    return entries;
+  }, []);
+};
+
+const restoreSourceStandaloneCustomContentIndents = (
+  lines,
+  fenceMask,
+  sourceMarkdown
+) => {
+  const sourceEntries =
+    collectSourceStandaloneCustomContentIndents(sourceMarkdown);
+
+  if (!sourceEntries.length) {
+    return;
+  }
+
+  let sourceIndex = 0;
+  lines.forEach((line, index) => {
+    if (fenceMask[index] || !isStandaloneCustomContentLine(line)) {
+      return;
+    }
+
+    const value = line.trim();
+    while (
+      sourceIndex < sourceEntries.length &&
+      sourceEntries[sourceIndex].value !== value
+    ) {
+      sourceIndex++;
+    }
+
+    if (sourceIndex >= sourceEntries.length) {
+      return;
+    }
+
+    lines[index] = `${" ".repeat(sourceEntries[sourceIndex].indent)}${value}`;
+    sourceIndex++;
+  });
+};
+
+export const normalizeStandaloneCustomContentIndentation = (
+  markdown = "",
+  sourceMarkdown = ""
+) => {
   const lines = markdown.split("\n");
   const fenceMask = getFenceMask(lines);
   const stack = [];
@@ -113,6 +168,8 @@ export const normalizeStandaloneCustomContentIndentation = (markdown = "") => {
     ].trimStart()}`;
     lines[index] = `${" ".repeat(normalizedIndent)}${lines[index].trimStart()}`;
   });
+
+  restoreSourceStandaloneCustomContentIndents(lines, fenceMask, sourceMarkdown);
 
   return lines.join("\n");
 };

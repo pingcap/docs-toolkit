@@ -24,19 +24,92 @@ import { toMarkdown } from "mdast-util-to-markdown";
 
 import { translateSingleText } from "./gcpTranslate.js";
 import {
+  createComponentPlaceholderHtml,
   createLinkPlaceholderHtml,
   restorePreservedPlaceholders,
 } from "./placeholderUtils.js";
 
 const generateNoTranslateTag = (src) => {
-  return `<span translate="no">{{B-NOTRANSLATE-${src}-NOTRANSLATE-E}}</span>`;
+  // Use the final placeholder marker in the body so we can still restore even if
+  // the translation engine drops the wrapper tag.
+  return `<span translate="no">{{B-PLACEHOLDER-${src}-PLACEHOLDER-E}}</span>`;
 };
 
 const COMPONENT_LIKE_HTML_TAG = /^<\/?[A-Z][A-Za-z0-9]*(\s|>|\/>)/;
+const CUSTOM_CONTENT_OPEN_RE = /^<CustomContent\b[^>]*>\s*$/;
+const CUSTOM_CONTENT_CLOSE_RE = /^<\/CustomContent>\s*$/;
+const GITHUB_ISSUE_OR_PULL_URL_RE =
+  /^https?:\/\/github\.com\/[^/\s]+\/[^/\s]+\/(?:issues|pull)\/\d+\/?$/;
+const GITHUB_USER_URL_RE = /^https?:\/\/github\.com\/[^/\s]+\/?$/;
+const ISSUE_LINK_TEXT_RE = /^#\d+$/;
 
 const shouldPreserveInlineHtmlNode = (value = "") => {
   return COMPONENT_LIKE_HTML_TAG.test(value.trim());
 };
+
+const isCustomContentOpenNode = (node) =>
+  node?.type === "html" && CUSTOM_CONTENT_OPEN_RE.test(node.value.trim());
+
+const isCustomContentCloseNode = (node) =>
+  node?.type === "html" && CUSTOM_CONTENT_CLOSE_RE.test(node.value.trim());
+
+const getPlainNodeText = (node) => {
+  if (!node) {
+    return "";
+  }
+
+  if (typeof node.value === "string") {
+    return node.value;
+  }
+
+  if (Array.isArray(node.children)) {
+    return node.children.map((child) => getPlainNodeText(child)).join("");
+  }
+
+  return "";
+};
+
+const sourceNodeEndsWithWhitespace = (node) =>
+  /\s$/.test(getPlainNodeText(node));
+
+const isGithubIssueOrPullLink = (node, hrefValue) => {
+  const linkText = getPlainNodeText(node).trim();
+  return (
+    node?.type === "link" &&
+    ISSUE_LINK_TEXT_RE.test(linkText) &&
+    GITHUB_ISSUE_OR_PULL_URL_RE.test(hrefValue)
+  );
+};
+
+const isGithubUserLink = (node) =>
+  node?.type === "link" && GITHUB_USER_URL_RE.test(node.url || "");
+
+const isTrailingGithubMetadata = (children, startIndex) => {
+  for (let idx = startIndex + 1; idx < children.length; idx++) {
+    const child = children[idx];
+
+    if (child.type === "text" && /^[\s@]*$/.test(child.value)) {
+      continue;
+    }
+
+    if (isGithubUserLink(child)) {
+      continue;
+    }
+
+    return false;
+  }
+
+  return true;
+};
+
+const shouldRestoreLeadingSpaceBeforeIssueLink = (
+  children,
+  index,
+  hrefValue
+) =>
+  sourceNodeEndsWithWhitespace(children[index - 1]) &&
+  isGithubIssueOrPullLink(children[index], hrefValue) &&
+  isTrailingGithubMetadata(children, index);
 
 const getMds = (src) => {
   return glob.sync(src + "/**/*.md");
@@ -201,44 +274,169 @@ const handleHTML = async (htmlNode) => {
 };
 
 const handleParagraph = async (paragraphNode) => {
-  // TODO: handle linkReference
-  const metadata = await paragraphIntegratePlaceholder(paragraphNode.children);
+  paragraphNode.children = await translatePhrasingChildren(paragraphNode.children);
+};
 
-  const paragraphHtml = await mdSnippet2html(paragraphNode);
-  const trimParagraphHtml = trimHtmlTags(paragraphHtml);
-  const HTMLStr = updateHTMLNoTransStr(trimParagraphHtml);
-  const [output] = await translateSingleText(HTMLStr, "text/html");
+export const translatePhrasingChildren = async (
+  children,
+  translateText = translateSingleText
+) => {
+  const metadata = await paragraphIntegratePlaceholder(children, translateText);
+  const HTMLStr = await phrasingChildrenToTranslationHtml(children);
+  const [output] = await translateText(HTMLStr, "text/html");
   const translatedHTMLStr = restorePreservedPlaceholders(output);
   const translatedHTMLStrWithBr = updateBrTag(
     inlineHtml2mdStr(translatedHTMLStr)
   );
-  const newChildren = retriveByPlaceholder(translatedHTMLStrWithBr, metadata);
-  paragraphNode.children = newChildren;
+  return retriveByPlaceholder(translatedHTMLStrWithBr, metadata);
 };
 
-const paragraphIntegratePlaceholder = async (children) => {
+const findMatchingCustomContentClose = (children, openIndex) => {
+  let depth = 0;
+
+  for (let idx = openIndex; idx < children.length; idx++) {
+    const child = children[idx];
+    if (isCustomContentOpenNode(child)) {
+      depth++;
+      continue;
+    }
+
+    if (!isCustomContentCloseNode(child)) {
+      continue;
+    }
+
+    depth--;
+    if (depth === 0) {
+      return idx;
+    }
+  }
+
+  return -1;
+};
+
+const createPlaceholderNode = (value) => ({
+  type: "html",
+  value,
+});
+
+const getMetaNodePayload = (metaEntry) => {
+  if (!metaEntry) {
+    return [];
+  }
+
+  if (metaEntry.kind === "node-group") {
+    return _.cloneDeep(metaEntry.nodes || []);
+  }
+
+  if (metaEntry.node) {
+    return [_.cloneDeep(metaEntry.node)];
+  }
+
+  return [];
+};
+
+const restoredNodeEndsWithWhitespace = (node) =>
+  typeof node?.value === "string" && /\s$/.test(node.value);
+
+const addLeadingSpaceIfNeeded = (outputNodes, metaEntry) => {
+  if (
+    !metaEntry?.restoreLeadingSpaceIfJoined ||
+    !outputNodes.length ||
+    restoredNodeEndsWithWhitespace(outputNodes[outputNodes.length - 1])
+  ) {
+    return;
+  }
+
+  outputNodes.push({
+    type: "html",
+    value: " ",
+  });
+};
+
+const createMetadataEntry = (meta, metaEntry, nextId) => {
+  meta[nextId] = metaEntry;
+  return nextId;
+};
+
+const phrasingChildrenToTranslationHtml = async (children) => {
+  const paragraphHtml = await mdSnippet2html({
+    type: "paragraph",
+    children,
+  });
+  const trimParagraphHtml = trimHtmlTags(paragraphHtml);
+  return updateHTMLNoTransStr(trimParagraphHtml);
+};
+
+const paragraphIntegratePlaceholder = async (children, translateText) => {
   // type PhrasingContent = HTML | Link | LinkReference | Text | Emphasis | Strong | Delete | InlineCode | Break | Image | ImageReference | Footnote | FootnoteReference
   const meta = {};
+  let nextPlaceholderId = 0;
+
   for (let idx = 0; idx < children.length; idx++) {
     const child = children[idx];
+
+    if (isCustomContentOpenNode(child)) {
+      const closeIndex = findMatchingCustomContentClose(children, idx);
+      if (closeIndex !== -1) {
+        const placeholderId = createMetadataEntry(
+          meta,
+          {
+            kind: "node-group",
+            nodes: [],
+          },
+          nextPlaceholderId++
+        );
+        const innerChildren = _.cloneDeep(children.slice(idx + 1, closeIndex));
+        const translatedInnerChildren = await translatePhrasingChildren(
+          innerChildren,
+          translateText
+        );
+        const componentNodes = [
+          _.cloneDeep(child),
+          ...translatedInnerChildren,
+          _.cloneDeep(children[closeIndex]),
+        ];
+        const componentInnerHtml = await phrasingChildrenToTranslationHtml(
+          translatedInnerChildren
+        );
+
+        meta[placeholderId].nodes = componentNodes;
+        children.splice(
+          idx,
+          closeIndex - idx + 1,
+          createPlaceholderNode(
+            createComponentPlaceholderHtml(placeholderId, componentInnerHtml)
+          )
+        );
+        continue;
+      }
+    }
+
     switch (child.type) {
       case "link":
+        const linkPlaceholderId = nextPlaceholderId++;
         const linkHtml = await mdSnippet2html(child);
         const linkHtmlStr = trimHtmlTags(linkHtml);
         const hrefValue = linkHtmlStr.match(
           /<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1/
         )[2];
-        const [linkHtmlStrInside] = await translateSingleText(
+        const restoreLeadingSpaceIfJoined =
+          shouldRestoreLeadingSpaceBeforeIssueLink(children, idx, hrefValue);
+        const [linkHtmlStrInside] = await translateText(
           trimHtmlTags(linkHtmlStr),
           "text/html"
         );
         const translatedLinkText = inlineHtml2mdStr(linkHtmlStrInside);
-        children[idx] = {
-          type: "html",
-          value: createLinkPlaceholderHtml(idx, hrefValue, translatedLinkText),
-        };
-        meta[idx] = {
+        children[idx] = createPlaceholderNode(
+          createLinkPlaceholderHtml(
+            linkPlaceholderId,
+            hrefValue,
+            translatedLinkText
+          )
+        );
+        meta[linkPlaceholderId] = {
           kind: "link",
+          restoreLeadingSpaceIfJoined,
           node: {
             type: "html",
             value: `[${translatedLinkText}](${hrefValue})`,
@@ -251,12 +449,12 @@ const paragraphIntegratePlaceholder = async (children) => {
       case "imageReference":
       case "footnote":
       case "footnoteReference":
+        const nodePlaceholderId = nextPlaceholderId++;
         const nodeChildCopy = _.cloneDeep(child);
-        children[idx] = {
-          type: "html",
-          value: generateNoTranslateTag(idx),
-        };
-        meta[idx] = {
+        children[idx] = createPlaceholderNode(
+          generateNoTranslateTag(nodePlaceholderId)
+        );
+        meta[nodePlaceholderId] = {
           kind: "node",
           node: nodeChildCopy,
         };
@@ -265,12 +463,12 @@ const paragraphIntegratePlaceholder = async (children) => {
         if (!shouldPreserveInlineHtmlNode(child.value)) {
           break;
         }
+        const htmlPlaceholderId = nextPlaceholderId++;
         const htmlChildCopy = _.cloneDeep(child);
-        children[idx] = {
-          type: "html",
-          value: generateNoTranslateTag(idx),
-        };
-        meta[idx] = {
+        children[idx] = createPlaceholderNode(
+          generateNoTranslateTag(htmlPlaceholderId)
+        );
+        meta[htmlPlaceholderId] = {
           kind: "node",
           node: htmlChildCopy,
         };
@@ -283,27 +481,30 @@ const paragraphIntegratePlaceholder = async (children) => {
 };
 
 const retriveByPlaceholder = (resultStr, meta) => {
-  return resultStr.split(/({{B-|-E}})/g).reduce((prev, item) => {
-    if (item.startsWith("{{B-") || item.endsWith("-E}}")) return prev;
-    if (item.startsWith("PLACEHOLDER-") && item.endsWith("-PLACEHOLDER")) {
-      const originIdx = parseInt(item.replace(/(PLACEHOLDER|-)/g, ""));
-      const originItem = meta[originIdx]?.node;
-      if (!originItem) {
+  return resultStr
+    .split(/(\{\{B-PLACEHOLDER-\d+-PLACEHOLDER-E\}\})/g)
+    .reduce((prev, item) => {
+      if (!item) {
         return prev;
       }
-      switch (originItem.type) {
-        default:
-          prev.push(originItem);
-          break;
+
+      const placeholderMatch = item.match(
+        /^\{\{B-PLACEHOLDER-(\d+)-PLACEHOLDER-E\}\}$/
+      );
+      if (placeholderMatch) {
+        const metaEntry = meta[parseInt(placeholderMatch[1], 10)];
+        addLeadingSpaceIfNeeded(prev, metaEntry);
+        prev.push(...getMetaNodePayload(metaEntry));
+        return prev;
       }
-    } else {
+
       prev.push({
         type: "html",
         value: item,
       });
-    }
-    return prev;
-  }, []);
+
+      return prev;
+    }, []);
 };
 
 const enStr2AnchorFormat = (headingStr) => {
