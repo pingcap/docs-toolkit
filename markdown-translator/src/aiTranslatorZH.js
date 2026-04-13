@@ -14,7 +14,7 @@ const INPUT_TOKEN_LIMIT = Math.floor(OUTPUT_TOKEN_LIMIT / TOKEN_RATIO);
 const getOpenAIConfig = () => ({
   apiUrl: process.env.OPENAI_RESPONSES_API_URL,
   apiKey: process.env.OPENAI_API_KEY,
-  model: process.env.OPENAI_MODEL,
+  model: process.env.OPENAI_MODEL || "gpt-5.4",
 });
 
 /**
@@ -100,9 +100,7 @@ const translateWithLangLink = async (content, glossary) => {
   const { apiUrl, apiKey, model } = getOpenAIConfig();
 
   if (!apiUrl || !apiKey || !model) {
-    throw new Error(
-      "Missing required env vars: OPENAI_RESPONSES_API_URL, OPENAI_API_KEY, OPENAI_MODEL"
-    );
+    throw new Error("Missing required env vars: OPENAI_RESPONSES_API_URL, OPENAI_API_KEY");
   }
 
   try {
