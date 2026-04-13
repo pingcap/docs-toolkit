@@ -1,11 +1,7 @@
 import * as fs from "fs";
 import { get_encoding } from "tiktoken";
 import { writeFileSync } from "./lib.js";
-import { executeLangLinkTranslator } from "./langlinkClient.js";
 import { gcpTranslator } from "./gcpTranslator.js";
-
-// LangLink 配置
-const LANGLINK_APP_ID = "d57cc1a9-2b2a-45c7-9119-ac798285b2ab";
 
 // Token 限制配置
 const OUTPUT_TOKEN_LIMIT = 60000;
@@ -14,6 +10,12 @@ const TIKTOKEN_ENCODING = "cl100k_base";
 // 英文到中文的token比例估算（通常中文token数约为英文的1.5-2倍）
 const TOKEN_RATIO = 1.8;
 const INPUT_TOKEN_LIMIT = Math.floor(OUTPUT_TOKEN_LIMIT / TOKEN_RATIO);
+
+const getOpenAIConfig = () => ({
+  apiUrl: process.env.OPENAI_RESPONSES_API_URL,
+  apiKey: process.env.OPENAI_API_KEY,
+  model: process.env.OPENAI_MODEL,
+});
 
 /**
  * 计算文本的token数量
@@ -28,20 +30,101 @@ const countTokens = (text) => {
   return count;
 };
 
+const buildTranslationPrompt = (content, glossary) => `You are a professional technical document translator, specializing in translating English technical documents into accurate and professional Chinese.
+
+Please translate the following English technical document into Chinese, preserving the original Markdown format and structure:
+
+English Content:
+${content}
+
+Please follow these requirements strictly:
+
+Markdown and Code Preservation Rules:
+- Absolutely preserve all Markdown structures (headings, lists, tables, links, emphasis, etc.).
+- Preserve ALL code blocks exactly as-is:
+    - Do not modify code.
+     - Do not summarize, shorten, or replace it with comments like “代码保持不变”.
+     - Do not add or remove any characters inside code blocks.
+     - Treat everything between triple backticks \`\`\` as literal text to copy verbatim.
+- Keep all filenames, paths, SQL, Java, Go, JSON, YAML, and shell commands unchanged.
+ 
+Translation Rules:
+- Use precise, professional Chinese technical terminology.
+- Maintain logical flow and readability.
+- Keep all link URLs unchanged.
+- Do not translate text wrapped in bold syntax.
+- Translate “you” as “你”, not “您”.
+- Insert spaces between Chinese and English text, and between Chinese text and Arabic numerals.
+- Translate only the natural-language content. Do not add explanations or extra text.
+
+Strictly forbidden:
+- Do not omit code blocks.
+- Do not replace code with placeholders.
+- Do not rewrite or format code.
+- Do not hallucinate missing content.
+- Do not simplify long code samples.
+
+Glossary Rules:
+If you find any of the following keys in the text, do not translate them; simply replace the matching key with the corresponding value:
+${JSON.stringify(glossary, null, 2)}`;
+
+const extractResponseText = (responseBody) => {
+  if (typeof responseBody.output_text === "string" && responseBody.output_text) {
+    return responseBody.output_text;
+  }
+
+  if (!Array.isArray(responseBody.output)) {
+    throw new Error(`Unexpected OpenAI response shape: ${JSON.stringify(responseBody)}`);
+  }
+
+  const text = responseBody.output
+    .flatMap((item) => item.content || [])
+    .filter((item) => item.type === "output_text")
+    .map((item) => item.text || "")
+    .join("");
+
+  if (!text) {
+    throw new Error(`OpenAI response does not contain output text: ${JSON.stringify(responseBody)}`);
+  }
+
+  return text;
+};
+
 /**
- * 使用LangLink进行翻译
+ * 使用 OpenAI Responses API 进行翻译
  * @param {string} content - 要翻译的内容
- * @param {Array} glossary - 词汇表
+ * @param {Record<string, string>} glossary - 词汇表
  * @returns {Promise<string>} 翻译结果
  */
 const translateWithLangLink = async (content, glossary) => {
-  try {
-    const result = await executeLangLinkTranslator(
-      LANGLINK_APP_ID,
-      content,
-      glossary
+  const { apiUrl, apiKey, model } = getOpenAIConfig();
+
+  if (!apiUrl || !apiKey || !model) {
+    throw new Error(
+      "Missing required env vars: OPENAI_RESPONSES_API_URL, OPENAI_API_KEY, OPENAI_MODEL"
     );
-    return result;
+  }
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": apiKey,
+      },
+      body: JSON.stringify({
+        model,
+        input: buildTranslationPrompt(content, glossary),
+        max_output_tokens: OUTPUT_TOKEN_LIMIT,
+      }),
+    });
+
+    const responseBody = await response.json();
+    if (!response.ok) {
+      throw new Error(JSON.stringify(responseBody));
+    }
+
+    return extractResponseText(responseBody);
   } catch (error) {
     console.error("Translation error:", error);
     throw error;
