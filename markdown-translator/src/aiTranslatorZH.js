@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import OpenAI from "openai";
 import { get_encoding } from "tiktoken";
 import { writeFileSync } from "./lib.js";
 import { gcpTranslator } from "./gcpTranslator.js";
@@ -12,10 +13,29 @@ const TOKEN_RATIO = 1.8;
 const INPUT_TOKEN_LIMIT = Math.floor(OUTPUT_TOKEN_LIMIT / TOKEN_RATIO);
 
 const getOpenAIConfig = () => ({
-  apiUrl: process.env.OPENAI_RESPONSES_API_URL,
+  baseURL: process.env.OPENAI_RESPONSES_API_URL,
   apiKey: process.env.OPENAI_API_KEY,
   model: process.env.OPENAI_MODEL || "gpt-5.4",
 });
+
+let openAIClient;
+let openAIClientCacheKey;
+
+const getOpenAIClient = ({ baseURL, apiKey }) => {
+  const cacheKey = `${baseURL}::${apiKey}`;
+  if (!openAIClient || openAIClientCacheKey !== cacheKey) {
+    openAIClient = new OpenAI({
+      apiKey,
+      baseURL,
+      defaultHeaders: {
+        "api-key": apiKey,
+      },
+    });
+    openAIClientCacheKey = cacheKey;
+  }
+
+  return openAIClient;
+};
 
 /**
  * 计算文本的token数量
@@ -97,32 +117,21 @@ const extractResponseText = (responseBody) => {
  * @returns {Promise<string>} 翻译结果
  */
 const translateWithLangLink = async (content, glossary) => {
-  const { apiUrl, apiKey, model } = getOpenAIConfig();
+  const { baseURL, apiKey, model } = getOpenAIConfig();
 
-  if (!apiUrl || !apiKey || !model) {
+  if (!baseURL || !apiKey || !model) {
     throw new Error("Missing required env vars: OPENAI_RESPONSES_API_URL, OPENAI_API_KEY");
   }
 
   try {
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "api-key": apiKey,
-      },
-      body: JSON.stringify({
-        model,
-        input: buildTranslationPrompt(content, glossary),
-        max_output_tokens: OUTPUT_TOKEN_LIMIT,
-      }),
+    const client = getOpenAIClient({ baseURL, apiKey });
+    const response = await client.responses.create({
+      model,
+      input: buildTranslationPrompt(content, glossary),
+      max_output_tokens: OUTPUT_TOKEN_LIMIT,
     });
 
-    const responseBody = await response.json();
-    if (!response.ok) {
-      throw new Error(JSON.stringify(responseBody));
-    }
-
-    return extractResponseText(responseBody);
+    return extractResponseText(response);
   } catch (error) {
     console.error("Translation error:", error);
     throw error;
