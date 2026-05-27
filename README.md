@@ -6,3 +6,4 @@ The unified toolkit for TiDB documentation. It integrates essential functions li
 
 - markdown-summarizer: AI-based summarizer for markdown files' metadata generation
 - markdown-translator: AI-based translation tool for markdown files
+- llms-txt-generator: generates localized `llms.txt` documentation indexes and submits automated updates to [pingcap/website-docs](https://github.com/pingcap/website-docs)
