@@ -1,0 +1,105 @@
+name: Generate llms.txt Updates
+
+on:
+  schedule:
+    # Runs llms.txt generation at 8:00 every Friday (UTC+8)
+    - cron: "0 0 * * 5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: generate-llms-txt-website-docs
+  cancel-in-progress: true
+
+jobs:
+  generate-llms-txt:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout docs-toolkit
+        uses: actions/checkout@v6
+
+      - name: Checkout docs-staging input
+        uses: actions/checkout@v6
+        with:
+          repository: pingcap/docs-staging
+          ref: main
+          path: llms-workspace/docs-staging
+          persist-credentials: false
+          sparse-checkout: markdown-pages
+
+      - name: Capture docs-staging revision
+        id: docs-staging
+        run: echo "sha=$(git -C llms-workspace/docs-staging rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout website-docs target
+        uses: actions/checkout@v6
+        with:
+          repository: pingcap/website-docs
+          ref: master
+          path: llms-workspace/website-docs
+          persist-credentials: false
+          sparse-checkout: static
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v8.0.0
+        with:
+          version: "0.11.7"
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: llms-txt-generator/pyproject.toml
+
+      - name: Install generator dependencies
+        run: |
+          uv venv llms-txt-generator/.venv
+          uv pip install --python llms-txt-generator/.venv/bin/python -r llms-txt-generator/pyproject.toml
+
+      - name: Generate llms.txt files
+        env:
+          LLMS_WORKING_DIR: ${{ github.workspace }}/llms-workspace
+        run: llms-txt-generator/.venv/bin/python llms-txt-generator/generate_llms_txt.py
+
+      - name: Create website-docs GitHub App token
+        id: website-docs-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.LLMS_TXT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.LLMS_TXT_APP_PRIVATE_KEY }}
+          owner: pingcap
+          repositories: website-docs
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Create website-docs pull request
+        id: pull-request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.website-docs-token.outputs.token }}
+          path: llms-workspace/website-docs
+          add-paths: static
+          base: master
+          branch: automation/generated-llms-txt
+          delete-branch: true
+          sign-commits: true
+          commit-message: "static: update generated llms.txt files"
+          title: "static: update generated llms.txt files"
+          assignees: Oreoxmt
+          body: |
+            Automated `llms.txt` updates generated from the current `docs-staging` Markdown content.
+
+            Do not commit manual edits to this branch. It is regenerated and may be overwritten by subsequent workflow runs.
+
+            Input content: [`pingcap/docs-staging@${{ steps.docs-staging.outputs.sha }}`](https://github.com/pingcap/docs-staging/commit/${{ steps.docs-staging.outputs.sha }})
+
+      - name: Summarize pull request result
+        env:
+          OPERATION: ${{ steps.pull-request.outputs.pull-request-operation }}
+          PR_URL: ${{ steps.pull-request.outputs.pull-request-url }}
+        run: |
+          if [ -n "${PR_URL}" ]; then
+            echo "Pull request ${OPERATION}: ${PR_URL}" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No llms.txt changes detected; no pull request was created." | tee -a "$GITHUB_STEP_SUMMARY"
+          fi

@@ -1,0 +1,204 @@
+settings:
+  docs_staging_base: "docs-staging/markdown-pages"
+  website_docs_base: "website-docs/static"
+  url_suffix: ".md"
+  lang_url_prefix:
+    en: ""
+    zh: "zh/"
+    ja: "ja/"
+
+products:
+  tidbcloud_dedicated:
+    product_name:
+      en: "TiDB Cloud Dedicated"
+      zh: "TiDB Cloud Dedicated"
+      ja: "TiDB Cloud Dedicated"
+    product_description:
+      en: "TiDB Cloud Dedicated is designed for mission-critical businesses, offering high availability across multiple availability zones, horizontal scaling, and full HTAP capabilities."
+      zh: "TiDB Cloud Dedicated 面向关键业务，提供跨多个可用区的高可用性、横向扩展能力以及完整的 HTAP 能力。"
+      ja: "TiDB Cloud Dedicated は、ミッションクリティカルなワークロード向けに設計されており、複数の可用性ゾーンにまたがる高可用性、水平スケーリング、そして完全な HTAP 機能を提供します。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidbcloud"
+    target_subdir: "tidbcloud"
+
+  tidbcloud_starter:
+    product_name:
+      en: "TiDB Cloud Starter"
+      zh: "TiDB Cloud Starter"
+      ja: "TiDB Cloud Starter"
+    product_description:
+      en: "TiDB Cloud Starter is a fully managed, multi-tenant TiDB offering. It delivers an instant, autoscaling MySQL-compatible database and offers a generous free quota and consumption based billing once free limits are exceeded."
+      zh: "TiDB Cloud Starter 是一款全托管的多租户 TiDB 服务。它提供即时、自动扩縮容的 MySQL 兼容数据库，并在超出免费额度后按用量计费。"
+      ja: "TiDB Cloud Starter は、完全マネージドのマルチテナント型 TiDB サービスです。MySQL 互換のデータベースを即時に利用でき、自動スケーリングをサポートします。無料枠を超えた分については、使用量に応じて課金されます。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidbcloud"
+    target_subdir: "tidbcloud/starter"
+
+  tidbcloud_essential:
+    product_name:
+      en: "TiDB Cloud Essential"
+      zh: "TiDB Cloud Essential"
+      ja: "TiDB Cloud Essential"
+    product_description:
+      en: "For applications experiencing growing workloads and needing scalability in real time, TiDB Cloud Essential provides the flexibility and performance to keep pace with your business growth."
+      zh: "针对业务负载持续增长、需要实时扩展的应用，TiDB Cloud Essential 提供灵活性和性能，助力你的业务持续发展。"
+      ja: "ビジネス負荷が継続的に増加し、リアルタイムでのスケールアウトが求められるアプリケーションに対して、TiDB Cloud Essential は柔軟性と高いパフォーマンスを提供し、ビジネスの継続的な成長を支援します。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidbcloud"
+    target_subdir: "tidbcloud/essential"
+
+  tidbcloud_premium:
+    product_name:
+      en: "TiDB Cloud Premium"
+      zh: "TiDB Cloud Premium"
+      ja: "TiDB Cloud Premium"
+    product_description:
+      en: "TiDB Cloud Premium is designed for mission-critical businesses that demand unlimited real-time scalability. It delivers workload-aware auto-scaling and comprehensive enterprise capabilities."
+      zh: "TiDB Cloud Premium 专为需要无限实时扩展能力的关键业务设计，提供工作负载感知的自动扩缩容能力以及全面的企业级功能。"
+      ja: "TiDB Cloud Premium は、無制限のリアルタイムスケーラビリティを必要とするミッションクリティカルなビジネス向けに設計されており、ワークロードに応じた自動スケーリングと包括的なエンタープライズ機能を提供します。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidbcloud"
+    target_subdir: "tidbcloud/premium"
+
+  tidb_self_managed:
+    product_name:
+      en: "TiDB Self-Managed"
+      zh: "TiDB Self-Managed"
+      ja: "TiDB Self-Managed"
+    product_description:
+      en: "TiDB is an open-source distributed SQL database that supports Hybrid Transactional and Analytical Processing (HTAP) workloads."
+      zh: "TiDB 是平凯星辰公司自主设计、研发的开源分布式关系型数据库。"
+      ja: "TiDB は平凱星辰（PingCAP）社が自主設計・開発したオープンソースの分散型リレーショナルデータベースです。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidb/stable"
+    target_subdir: "tidb"
+
+  tidb_in_kubernetes:
+    product_name:
+      en: "TiDB on Kubernetes"
+      zh: "TiDB on Kubernetes"
+      ja: "TiDB on Kubernetes"
+    product_description:
+      en: "Using TiDB Operator provided by PingCAP, you can run and maintain TiDB seamlessly on the Kubernetes clusters deployed on a public cloud or in a self-managed environment."
+      zh: "使用 PingCAP 提供的 TiDB Operator，你可以在公有云或自托管的 Kubernetes 集群上自动运维 TiDB 集群，实现 TiDB 在 Kubernetes 上的无缝运行。"
+      ja: "PingCAP が提供する TiDB Operator を使用すると、パブリッククラウドまたはセルフホスト型の Kubernetes クラスター上で TiDB クラスターの運用を自動化でき、Kubernetes 上で TiDB をシームレスに実行できます。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidb-in-kubernetes/stable"
+    target_subdir: "tidb-in-kubernetes"
+
+  tidbcloud_release_notes:
+    product_name:
+      en: "TiDB Cloud Releases"
+      zh: "TiDB Cloud 发布记录"
+      ja: "TiDB Cloudリリース"
+    product_description:
+      en: "This document provides an overview of TiDB Cloud release notes and maintenance notifications."
+      zh: "本文档概述了 TiDB Cloud 的发布记录和维护通知相关内容。"
+      ja: "このドキュメントでは、 TiDB Cloud のリリースノートとメンテナンス通知の概要を説明します。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidbcloud"
+    target_subdir: "releases/tidb-cloud"
+
+  tidb_self_managed_release_notes:
+    product_name:
+      en: "TiDB Release Notes"
+      zh: "TiDB 版本发布历史"
+      ja: "TiDB リリースノート"
+    product_description:
+      en: "This document lists all released TiDB versions, sorted by version number in descending order."
+      zh: "本文列出了所有已发布的 TiDB 版本，按版本号降序排序。"
+      ja: "このドキュメントでは、リリースされたすべての TiDB バージョンをバージョン番号の降順でリストします。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidb/stable"
+    target_subdir: "releases/tidb-self-managed"
+
+  tidb_in_kubernetes_release_notes:
+    product_name:
+      en: "TiDB Operator Release Notes"
+      zh: "TiDB Operator 版本发布历史"
+    product_description:
+      en: "This document lists all released TiDB Operator versions, sorted by version number in descending order."
+      zh: "本文列出了所有已发布的 TiDB Operator 版本，按版本号降序排序。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidb-in-kubernetes/dev"
+    target_subdir: "releases/tidb-operator"
+
+  ai:
+    product_name:
+      en: "TiDB for AI"
+      zh: "TiDB for AI"
+      ja: "TiDB for AI"
+    product_description:
+      en: "TiDB is a distributed SQL database designed for modern AI applications, offering integrated vector search, full-text search, and hybrid search capabilities. This document provides an overview of the AI features and tools available for building AI-powered applications with TiDB."
+      zh: "TiDB 是面向 AI 应用的分布式 SQL 数据库，支持向量搜索、全文搜索及混合搜索功能。本文介绍利用 TiDB 开发 AI 应用时可用的 AI 功能与工具。"
+      ja: "TiDBは、最新のAIアプリケーション向けに設計された分散SQLデータベースで、統合されたベクトル検索、全文検索、ハイブリッド検索機能を備えています。このドキュメントでは、TiDBを使用してAIを活用したアプリケーションを構築するために利用できるAI機能とツールの概要を説明します。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}ai"
+    target_subdir: "ai"
+
+  developer:
+    product_name:
+      en: "TiDB Developer Guide"
+      zh: "TiDB 应用开发"
+      ja: "TiDB 開発者向け"
+    product_description:
+      en: "This guide helps application developers quickly learn how to connect to TiDB, design databases, write and query data, and build reliable, high-performance applications on TiDB."
+      zh: "本指南旨在帮助应用开发者快速掌握如何连接 TiDB、设计数据库、读写数据，并基于 TiDB 构建可靠且高性能的应用程序。"
+      ja: "このガイドは、アプリケーション開発者が TiDB への接続、データベースの設計、データの書き込みとクエリ、TiDB 上での信頼性の高い高パフォーマンスのアプリケーションの構築方法を迅速に習得するのに役立ちます。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}developer"
+    target_subdir: "developer"
+
+  best_practices:
+    product_name:
+      en: "TiDB Best Practices"
+      zh: "TiDB 最佳实践"
+      ja: "TiDB ベストプラクティス"
+    product_description:
+      en: "By following best practices for deploying, configuring, and using TiDB, you can optimize the performance, reliability, and scalability of your TiDB deployments. This document provides an overview of the best practices for using TiDB."
+      zh: "通过遵循 TiDB 在部署、配置和使用方面的最佳实践，你可以有效优化 TiDB 集群的性能、可靠性和可扩展性。本文档对 TiDB 的各类最佳实践进行了总体介绍，帮助你更高效地使用 TiDB。"
+      ja: "TiDBの導入、設定、使用に関するベストプラクティスに従うことで、TiDBの導入におけるパフォーマンス、信頼性、スケーラビリティを最適化できます。このドキュメントでは、TiDBの使用に関するベストプラクティスの概要を説明します。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}best-practices"
+    target_subdir: "best-practices"
+
+  api:
+    product_name:
+      en: "TiDB API"
+      zh: "TiDB API"
+      ja: "TiDB API"
+    product_description:
+      en: "TiDB provides various APIs for querying and operating clusters, managing data replication, monitoring system status, and more. This document provides an overview of the available APIs for both TiDB Cloud and TiDB Self-Managed."
+      zh: "TiDB 提供了多种 API，可用于查询和运维集群、管理数据同步、监控系统状态等场景。本文介绍 TiDB Cloud 和 TiDB 的可用 API。"
+      ja: "TiDBは、クラスタのクエリと操作、データレプリケーションの管理、システムステータスの監視などのための様々なAPIを提供しています。このドキュメントでは、 TiDB CloudとTiDBセルフマネージド両方で利用可能なAPIの概要を説明します。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}api"
+    target_subdir: "api"
+
+toc_sources:
+  tidbcloud_dedicated:
+    - toc_relative_path: "tidbcloud/master/TOC.md"
+      languages: ["en", "zh", "ja"]
+  tidbcloud_starter:
+    - toc_relative_path: "tidbcloud/master/TOC-tidb-cloud-starter.md"
+      languages: ["en", "zh", "ja"]
+  tidbcloud_essential:
+    - toc_relative_path: "tidbcloud/master/TOC-tidb-cloud-essential.md"
+      languages: ["en", "zh", "ja"]
+  tidbcloud_premium:
+    - toc_relative_path: "tidbcloud/master/TOC-tidb-cloud-premium.md"
+      languages: ["en", "zh", "ja"]
+  tidb_self_managed:
+    - toc_relative_path: "tidb/release-8.5/TOC.md"
+      languages: ["en", "zh", "ja"]
+  tidb_in_kubernetes:
+    - toc_relative_path: "tidb-in-kubernetes/release-1.6/TOC.md"
+      languages: ["en", "zh"]
+  tidbcloud_release_notes:
+    - toc_relative_path: "tidbcloud/master/TOC-tidb-cloud-releases.md"
+      languages: ["en", "zh", "ja"]
+  tidb_self_managed_release_notes:
+    - toc_relative_path: "tidb/release-8.5/TOC-tidb-releases.md"
+      languages: ["en", "zh", "ja"]
+  tidb_in_kubernetes_release_notes:
+    - toc_relative_path: "tidb-in-kubernetes/main/TOC-tidb-operator-releases.md"
+      languages: ["en", "zh"]
+  ai:
+    - toc_relative_path: "tidb/release-8.5/TOC-ai.md"
+      languages: ["en", "zh", "ja"]
+  developer:
+    - toc_relative_path: "tidb/release-8.5/TOC-develop.md"
+      languages: ["en", "zh", "ja"]
+  best_practices:
+    - toc_relative_path: "tidb/release-8.5/TOC-best-practices.md"
+      languages: ["en", "zh", "ja"]
+  api:
+    - toc_relative_path: "tidb/release-8.5/TOC-api.md"
+      languages: ["en", "zh", "ja"]
