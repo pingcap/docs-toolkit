@@ -15,9 +15,9 @@ No.,Source Language [EN],Target Language [JP],PE course: 101,Doc,Note,,,,,,,,,,,
 8,TiDB Operator,TiDB Operator,OK,OK,ソフトウェア名称なのでカタカナにしないでそのまま,,,,,,,,,,,,,,,,,
 9,Top SQL,Top SQL,OK,OK,,,,,,,,,,,,,,,,,,
 10,Aurora,Aurora,OK,OK,機械翻訳：オーロラ,,,,,,,,,,,,,,,,,
-11,Cluster,クラスタ,OK,NG,長音なし（長音あり・なしで混在している）,,,,,,,,,,,,,,,,,
+11,Cluster,クラスター,OK,NG,長音なし（長音あり・なしで混在している）,,,,,,,,,,,,,,,,,
 12,online unsafe recovery,オンラインの安全でない復元,OK,,"機械翻訳：オンラインの安全でない回復 / これは「安全ではない」というのがあんまり響きがよくないので ""オンラインアンセーフリカバリ""にしましょう。",,,,,,,,,,,,,,,,,
-13,Multiple Data Centers in One City Deployment,1 つの地域展開における複数のデータセンター,OK,NG-Dict,機械翻訳：1 つの都市展開における複数のデータセンター,,,,,,,,,,,,,,,,,
+13,Multiple Data Centers in One City Deployment,1 つの地域に配置された複数のデータセンター,OK,NG-Dict,機械翻訳：1 つの都市展開における複数のデータセンター,,,,,,,,,,,,,,,,,
 14,Secure,セキュリティ,OK,OK,機械翻訳：安全,,,,,,,,,,,,,,,,,
 15,Generate Self-Signed Certificates,証明書を生成する,,,機械翻訳：自己署名証明書を生成する / https://ja.wikipedia.org/wiki/%E8%87%AA%E5%B7%B1%E7%BD%B2%E5%90%8D%E8%A8%BC%E6%98%8E%E6%9B%B8 をみると「自己署名証明書を生成する」がよさそうです。,,,,,,,,,,,,,,,,,
 16,Encryption at Rest,保存時の暗号化,OK,OK,機械翻訳：保管時の暗号化,,,,,,,,,,,,,,,,,
@@ -27,16 +27,14 @@ No.,Source Language [EN],Target Language [JP],PE course: 101,Doc,Note,,,,,,,,,,,
 20,Maintain,管理,OK,OK,機械翻訳：維持,,,,,,,,,,,,,,,,,
 21,Deploy,デプロイ,OK,OK,機械翻訳：配備,,,,,,,,,,,,,,,,,
 22,Performance Tuning,性能チューニング,OK,OK,機械翻訳：性能調整,,,,,,,,,,,,,,,,,
-23,Configuration,コンフィグレーション,OK,NG-Dict,機械翻訳：構成 / これは「コンフィグレーション」でいいとおもいます。疑問点あれば教えてください。,,,,,,,,,,,,,,,,,
+23,Configuration,設定,OK,NG-Dict,機械翻訳：構成 / これは「コンフィグレーション」でいいとおもいます。疑問点あれば教えてください。,,,,,,,,,,,,,,,,,
 24,TiKV Follower Read,TiKV Follower Readの調整,OK,OK,機械翻訳：TiKV フォロワー読み取り（詳細はメニューの性能チューニング >> コンフィグレーション をご覧ください）,,,,,,,,,,,,,,,,,
 25,EXPLAIN Walkthrough,EXPLAIN コマンド,OK,NG-Dict,機械翻訳：EXPLAIN ウォークスルー,,,,,,,,,,,,,,,,,
 26,Joins,テーブル結合,OK,OK,機械翻訳：参加する,,,,,,,,,,,,,,,,,
 27,Aggregation,集計,OK,OK,機械翻訳：集約,,,,,,,,,,,,,,,,,
 28,Column Pruning,カラムの剪定,OK,OK,機械翻訳：列の剪定,,,,,,,,,,,,,,,,,
 29,Predicates Push Down,Predicate Push Down,OK,OK,機械翻訳：述語プッシュダウン,,,,,,,,,,,,,,,,,
-30,Join Reorder,結合したテーブルの再配置,OK,OK,機械翻訳：再注文に参加,,,,,,,,,,,,,,,,,
-31,Statistics,統計,OK,OK,機械翻訳：統計学,,,,,,,,,,,,,,,,,
-32,Wrong Index Solution,インデックス問題の解決方法,OK,OK,機械翻訳：間違ったインデックスソリューション,,,,,,,,,,,,,,,,,
+
 33,Distinct Optimization,クエリの最適化,OK,OK,機械翻訳：明確な最適化,,,,,,,,,,,,,,,,,
 34,Precision Math,精密計算,OK,OK,機械翻訳：精密数学,,,,,,,,,,,,,,,,,
 35,FAQ,FAQ,OK,OK,（よくある質問・FAQで混在しているので統一）,,,,,,,,,,,,,,,,,
@@ -111,7 +109,7 @@ No.,Source Language [EN],Target Language [JP],PE course: 101,Doc,Note,,,,,,,,,,,
 104,panic,panic,OK,OK,panicはGo言語の機能なので、固有名詞としてpanicのままでいいとおもいます。,,,,,,,,,,,,,,,,,
 105,TiKV Control,TiKV Control,,OK,今は「TiKV制御」になっているが、これは https://docs.pingcap.com/tidb/stable/tikv-control のことなので、原文のままとしました。,,,,,,,,,,,,,,,,,
 106,PD Control,PD Control,,OK,今は「PD制御」となっているが、これは https://docs.pingcap.com/tidb/stable/pd-control のことなので、原文のままとしました。,,,,,,,,,,,,,,,,,
-107,Join Reorder,Join Reorder,,NG,今は「再注文」となっているが不自然なので、原文のままとしました。,,,,,,,,,,,,,,,,,
+
 108,auto analyze,auto analyze,,OK,今は「自動分析」となっているが、不自然なので、原文のままとしました。,,,,,,,,,,,,,,,,,
 109, Prepared Plan Cache ,プリペアドプランキャッシュ,,NG,今は「準備済みプランキャッシュ」となっているが、プリペアドステートメントは一般的な用語なのでこのようにしました。,,,,,,,,,,,,,,,,,
 110,DM WebUI,DM WebUI,,OK,今は「DMWebUI」とスペースが入らないため、スペースをDMのあとに入れました。,,,,,,,,,,,,,,,,,
@@ -296,3 +294,12 @@ https://docs.pingcap.com/ja/tidbcloud/?utm_campaign=webinar&utm_medium=email_bla
 277,Essential,Essential,,,,,,,,,,,,,,,,,,,
 278,Dedicated,Dedicated,,,,,,,,,,,,,,,,,,,,
 279,TiDB Playground,TiDB Playground,,,,,,,,,,,,,,,,,,,
+280,2xlarge,2xlarge,,,Protect instance types from translation (consistent with xlarge)
+281,4xlarge,4xlarge,,,Protect instance types from translation (consistent with xlarge)
+282,8xlarge,8xlarge,,,Protect instance types from translation (consistent with xlarge)
+283,12xlarge,12xlarge,,,Protect instance types from translation (consistent with xlarge)
+284,16xlarge,16xlarge,,,Protect instance types from translation (consistent with xlarge)
+286,Self-Managed,Self-Managed,,,Standard product naming for TiDB Self-Managed (protection)
+287,Hotspot,ホットスポット,,,Avoid literal translation like '熱い地点' while maintaining technical term
+288,Primary Cluster,プライマリクラスター,,,Safe long phrase normalization
+289,Secondary Cluster,セカンダリクラスター,,,Safe long phrase normalization
