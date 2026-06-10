@@ -85,7 +85,7 @@ jobs:
           sign-commits: true
           commit-message: "static: update generated llms.txt files"
           title: "static: update generated llms.txt files"
-          assignees: Oreoxmt
+          assignees: lilin90
           body: |
             Automated `llms.txt` updates generated from the current `docs-staging` Markdown content.
 
