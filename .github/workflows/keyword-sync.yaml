@@ -1,0 +1,219 @@
+name: Keyword sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "TiDB/docs branch to sync. Leave empty to sync all configured branches."
+        required: false
+        default: ""
+  schedule:
+    # Runs keyword-sync at 8:00 every Friday (UTC+8)
+    - cron: "0 0 * * 5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keyword-sync-${{ github.event.inputs.branch || 'all' }}
+  cancel-in-progress: true
+
+jobs:
+  plan-branches:
+    runs-on: ubuntu-latest
+    outputs:
+      branches: ${{ steps.branches.outputs.branches }}
+    steps:
+      - name: Checkout docs toolkit
+        uses: actions/checkout@v6
+        with:
+          path: docs-toolkit
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v8.0.0
+        with:
+          version: "0.11.7"
+          python-version: "3.12"
+
+      - name: Resolve branches
+        id: branches
+        working-directory: docs-toolkit
+        env:
+          BRANCH: ${{ github.event.inputs.branch }}
+        run: |
+          set -euo pipefail
+          if [ -n "${BRANCH}" ]; then
+            BRANCHES="[\"${BRANCH}\"]"
+          else
+            BRANCHES="$(uv run --python 3.12 python -m keyword_sync.cli --list-branches)"
+          fi
+          echo "branches=${BRANCHES}" >> "$GITHUB_OUTPUT"
+
+  keyword-sync:
+    needs: plan-branches
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJson(needs.plan-branches.outputs.branches) }}
+    steps:
+      - name: Checkout docs toolkit
+        uses: actions/checkout@v6
+        with:
+          path: docs-toolkit
+
+      - name: Checkout TiDB source
+        uses: actions/checkout@v6
+        with:
+          repository: pingcap/tidb
+          ref: ${{ matrix.branch }}
+          path: tidb
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Checkout docs target
+        uses: actions/checkout@v6
+        with:
+          repository: pingcap/docs
+          ref: ${{ matrix.branch }}
+          path: docs
+          persist-credentials: false
+
+      - name: Checkout docs-cn target
+        uses: actions/checkout@v6
+        with:
+          repository: pingcap/docs-cn
+          ref: ${{ matrix.branch }}
+          path: docs-cn
+          persist-credentials: false
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v8.0.0
+        with:
+          version: "0.11.7"
+          python-version: "3.12"
+
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.KEYWORD_SYNC_APP_CLIENT_ID }}
+          private-key: ${{ secrets.KEYWORD_SYNC_APP_PRIVATE_KEY }}
+          owner: pingcap
+          repositories: |
+            docs
+            docs-cn
+            docs-toolkit
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Run keyword sync
+        id: metadata
+        working-directory: docs-toolkit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TIDB_WORKING_DIR: ${{ github.workspace }}/tidb
+          DOCS_WORKING_DIR: ${{ github.workspace }}/docs
+          DOCS_CN_WORKING_DIR: ${{ github.workspace }}/docs-cn
+        run: |
+          set -euo pipefail
+          META_DIR="${RUNNER_TEMP}/keyword-sync"
+          BRANCH="${{ matrix.branch }}"
+          uv run --python 3.12 python -m keyword_sync.cli \
+            --branch "${BRANCH}" \
+            --metadata-dir "${META_DIR}"
+          cat "${META_DIR}/outputs.env" >> "$GITHUB_OUTPUT"
+
+      - name: Create docs pull request
+        id: docs-pr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          path: docs
+          add-paths: keywords.md
+          base: ${{ matrix.branch }}
+          branch: automation/keyword-sync-docs-${{ matrix.branch }}-${{ steps.metadata.outputs.docs_source_commit }}
+          delete-branch: true
+          sign-commits: true
+          commit-message: "docs: sync keywords from TiDB parser"
+          title: "docs: sync keywords from TiDB parser"
+          body-path: ${{ steps.metadata.outputs.docs_body_path }}
+
+      - name: Create docs-cn pull request
+        id: docs-cn-pr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          path: docs-cn
+          add-paths: keywords.md
+          base: ${{ matrix.branch }}
+          branch: automation/keyword-sync-docs-cn-${{ matrix.branch }}-${{ steps.metadata.outputs.docs_cn_source_commit }}
+          delete-branch: true
+          sign-commits: true
+          commit-message: "docs: sync keywords from TiDB parser"
+          title: "docs: sync keywords from TiDB parser"
+          body-path: ${{ steps.metadata.outputs.docs_cn_body_path }}
+
+      - name: Persist keyword sync state
+        id: state-pr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          path: docs-toolkit
+          add-paths: keyword_sync/data/keyword-sync-state.json
+          base: ${{ github.ref_name }}
+          branch: automation/keyword-sync-state-${{ matrix.branch }}
+          delete-branch: true
+          sign-commits: true
+          commit-message: "chore: update keyword sync state for ${{ matrix.branch }}"
+          title: "chore: update keyword sync state for ${{ matrix.branch }}"
+          body: |
+            Updates the keyword sync state after processing TiDB `${{ matrix.branch }}` parser changes.
+
+            Related docs PRs:
+            - docs: ${{ steps.docs-pr.outputs.pull-request-url || 'no changes' }}
+            - docs-cn: ${{ steps.docs-cn-pr.outputs.pull-request-url || 'no changes' }}
+
+      - name: Comment on docs pull request
+        if: steps.docs-pr.outputs.pull-request-url != '' && steps.metadata.outputs.docs_cc_list != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_URL: ${{ steps.docs-pr.outputs.pull-request-url }}
+          COMMENT_PATH: ${{ steps.metadata.outputs.docs_comment_path }}
+        run: gh pr comment "${PR_URL}" --body-file "${COMMENT_PATH}"
+
+      - name: Comment on docs-cn pull request
+        if: steps.docs-cn-pr.outputs.pull-request-url != '' && steps.metadata.outputs.docs_cn_cc_list != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_URL: ${{ steps.docs-cn-pr.outputs.pull-request-url }}
+          COMMENT_PATH: ${{ steps.metadata.outputs.docs_cn_comment_path }}
+        run: gh pr comment "${PR_URL}" --body-file "${COMMENT_PATH}"
+
+      - name: Summarize pull request result
+        env:
+          DOCS_PR_URL: ${{ steps.docs-pr.outputs.pull-request-url }}
+          DOCS_CN_PR_URL: ${{ steps.docs-cn-pr.outputs.pull-request-url }}
+          STATE_PR_URL: ${{ steps.state-pr.outputs.pull-request-url }}
+        run: |
+          {
+            echo "## Keyword sync result"
+            echo ""
+            echo "Branch: ${{ matrix.branch }}"
+            echo ""
+            if [ -n "${DOCS_PR_URL}" ]; then
+              echo "- docs PR: ${DOCS_PR_URL}"
+            else
+              echo "- docs: no changes detected"
+            fi
+            if [ -n "${DOCS_CN_PR_URL}" ]; then
+              echo "- docs-cn PR: ${DOCS_CN_PR_URL}"
+            else
+              echo "- docs-cn: no changes detected"
+            fi
+            if [ -n "${STATE_PR_URL}" ]; then
+              echo "- state PR: ${STATE_PR_URL}"
+            else
+              echo "- state: no changes detected"
+            fi
+          } | tee -a "$GITHUB_STEP_SUMMARY"
