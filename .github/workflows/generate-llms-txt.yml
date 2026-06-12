@@ -86,6 +86,7 @@ jobs:
           commit-message: "static: update generated llms.txt files"
           title: "static: update generated llms.txt files"
           assignees: lilin90
+          author: pingcap-docs-app[bot] <136219707+pingcap-docs-app[bot]@users.noreply.github.com>
           body: |
             Automated `llms.txt` updates generated from the current `docs-staging` Markdown content.
 
