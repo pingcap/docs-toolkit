@@ -1,0 +1,37 @@
+tidb_repo = "pingcap/tidb"
+parser_path = "pkg/parser/parser.y"
+tidb_working_dir_env = "TIDB_WORKING_DIR"
+
+[[branches]]
+tidb_branch = "master"
+
+[[branches.targets]]
+name = "docs"
+repo = "pingcap/docs"
+branch = "master"
+keywords_file = "keywords.md"
+working_dir_env = "DOCS_WORKING_DIR"
+
+[[branches.targets]]
+name = "docs-cn"
+repo = "pingcap/docs-cn"
+branch = "master"
+keywords_file = "keywords.md"
+working_dir_env = "DOCS_CN_WORKING_DIR"
+
+[[branches]]
+tidb_branch = "release-8.5"
+
+[[branches.targets]]
+name = "docs"
+repo = "pingcap/docs"
+branch = "release-8.5"
+keywords_file = "keywords.md"
+working_dir_env = "DOCS_WORKING_DIR"
+
+[[branches.targets]]
+name = "docs-cn"
+repo = "pingcap/docs-cn"
+branch = "release-8.5"
+keywords_file = "keywords.md"
+working_dir_env = "DOCS_CN_WORKING_DIR"

@@ -1,0 +1,12 @@
+{
+  "branches": {
+    "master": {
+      "last_handled_code_commit": "b254c43931d97876fc2d7bd25f699451ba2736de",
+      "pending_prs": {}
+    },
+    "release-8.5": {
+      "last_handled_code_commit": null,
+      "pending_prs": {}
+    }
+  }
+}
