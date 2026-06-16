@@ -109,7 +109,6 @@ No.,Source Language [EN],Target Language [JP],PE course: 101,Doc,Note,,,,,,,,,,,
 104,panic,panic,OK,OK,panicはGo言語の機能なので、固有名詞としてpanicのままでいいとおもいます。,,,,,,,,,,,,,,,,,
 105,TiKV Control,TiKV Control,,OK,今は「TiKV制御」になっているが、これは https://docs.pingcap.com/tidb/stable/tikv-control のことなので、原文のままとしました。,,,,,,,,,,,,,,,,,
 106,PD Control,PD Control,,OK,今は「PD制御」となっているが、これは https://docs.pingcap.com/tidb/stable/pd-control のことなので、原文のままとしました。,,,,,,,,,,,,,,,,,
-
 108,auto analyze,auto analyze,,OK,今は「自動分析」となっているが、不自然なので、原文のままとしました。,,,,,,,,,,,,,,,,,
 109, Prepared Plan Cache ,プリペアドプランキャッシュ,,NG,今は「準備済みプランキャッシュ」となっているが、プリペアドステートメントは一般的な用語なのでこのようにしました。,,,,,,,,,,,,,,,,,
 110,DM WebUI,DM WebUI,,OK,今は「DMWebUI」とスペースが入らないため、スペースをDMのあとに入れました。,,,,,,,,,,,,,,,,,
