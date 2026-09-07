@@ -56,6 +56,18 @@ products:
     base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidbcloud"
     target_subdir: "tidbcloud/premium"
 
+  tidbcloud_lake:
+    product_name:
+      en: "TiDB Cloud Lake"
+      zh: "TiDB Cloud Lake"
+      ja: "TiDB Cloud Lake"
+    product_description:
+      en: "TiDB Cloud Lake is a cloud-native data warehouse service for analytics workloads. It separates compute and storage, and supports ANSI SQL, semi-structured data processing, and AI-oriented workflows."
+      zh: "TiDB Cloud Lake 是一款面向分析工作负载的云原生数据仓库服务。它将计算与存储分离，并支持 ANSI SQL、半结构化数据处理和面向 AI 的工作流。"
+      ja: "TiDB Cloud Lake は、分析ワークロード向けのクラウドネイティブなデータウェアハウスサービスです。コンピュートとストレージを分離し、ANSI SQL、半構造化データ処理、AI 向けのワークフローをサポートしています。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidbcloudlake/"
+    target_subdir: "tidbcloudlake"
+
   tidb_self_managed:
     product_name:
       en: "TiDB Self-Managed"
@@ -175,6 +187,9 @@ toc_sources:
   tidbcloud_premium:
     - toc_relative_path: "tidbcloud/master/TOC-tidb-cloud-premium.md"
       languages: ["en", "zh", "ja"]
+  tidbcloud_lake:
+    - toc_relative_path: "tidb-cloud-lake/master/TOC-tidb-cloud-lake.md"
+      languages: ["en"]
   tidb_self_managed:
     - toc_relative_path: "tidb/release-8.5/TOC.md"
       languages: ["en", "zh", "ja"]
