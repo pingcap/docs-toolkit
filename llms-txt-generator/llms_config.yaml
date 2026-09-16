@@ -189,7 +189,7 @@ toc_sources:
       languages: ["en", "zh", "ja"]
   tidbcloud_lake:
     - toc_relative_path: "tidb-cloud-lake/master/TOC-tidb-cloud-lake.md"
-      languages: ["en"]
+      languages: ["en", "zh"]
   tidb_self_managed:
     - toc_relative_path: "tidb/release-8.5/TOC.md"
       languages: ["en", "zh", "ja"]
