@@ -218,7 +218,7 @@ toc_sources:
     - toc_relative_path: "tidbcloud/master/TOC-tidb-cloud-starter.md"
       languages: ["en", "zh", "ja"]
   tidbcloud_starter_postgresql:
-    - toc_relative_path: "tidb/release-8.5/TOC-tidb-cloud-starter-postgresql.md"
+    - toc_relative_path: "tidbcloud/master/TOC-tidb-cloud-starter-postgresql.md"
       languages: ["en", "zh", "ja"]
   tidbcloud_essential:
     - toc_relative_path: "tidbcloud/master/TOC-tidb-cloud-essential.md"
@@ -227,7 +227,7 @@ toc_sources:
     - toc_relative_path: "tidbcloud/master/TOC-tidb-cloud-premium.md"
       languages: ["en", "zh", "ja"]
   tidbcloud_byoc:
-    - toc_relative_path: "tidb/release-8.5/TOC-tidb-cloud-byoc.md"
+    - toc_relative_path: "tidbcloud/master/TOC-tidb-cloud-byoc.md"
       languages: ["en", "zh", "ja"]
   tidbcloud_lake:
     - toc_relative_path: "tidb-cloud-lake/master/TOC-tidb-cloud-lake.md"
