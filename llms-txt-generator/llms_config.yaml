@@ -32,6 +32,18 @@ products:
     base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidbcloud"
     target_subdir: "tidbcloud/starter"
 
+  tidbcloud_starter_postgresql:
+    product_name:
+      en: "PostgreSQL-compatible TiDB Cloud Starter"
+      zh: "PostgreSQL-compatible TiDB Cloud Starter"
+      ja: "PostgreSQL-compatible TiDB Cloud Starter"
+    product_description:
+      en: "PostgreSQL-compatible TiDB Cloud Starter is designed for developers building and testing applications with familiar PostgreSQL tools and frameworks. It offers a fully managed, autoscaling database with pgvector-compatible vector search and selected PostgreSQL extensions."
+      zh: "兼容 PostgreSQL 的 TiDB Cloud Starter 专门为使用 PostgreSQL 常用工具和框架开发、测试应用程序的开发者而设计。它提供全托管、可自动扩缩容的数据库服务，支持兼容 pgvector 的向量搜索功能以及部分 PostgreSQL 扩展。"
+      ja: "PostgreSQL 互換の TiDB Cloud Starter は、使い慣れた PostgreSQL のツールやフレームワークを使用してアプリケーションを開発・テストする開発者向けに設計されています。フルマネージドで自動スケーリングに対応したデータベースを提供し、pgvector 互換のベクトル検索機能と一部の PostgreSQL 拡張機能をサポートしています。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidbcloud"
+    target_subdir: "tidbcloud/starter-postgresql"
+
   tidbcloud_essential:
     product_name:
       en: "TiDB Cloud Essential"
@@ -56,6 +68,18 @@ products:
     base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidbcloud"
     target_subdir: "tidbcloud/premium"
 
+  tidbcloud_byoc:
+    product_name:
+      en: "TiDB Cloud BYOC"
+      zh: "TiDB Cloud BYOC"
+      ja: "TiDB Cloud BYOC"
+    product_description:
+      en: "TiDB Cloud BYOC (Bring Your Own Cloud) is an enterprise solution that lets you run the data plane in your own cloud environment while retaining the fully managed experience of TiDB Cloud."
+      zh: "TiDB Cloud BYOC (Bring Your Own Cloud) 是一项企业级解决方案，让你可以在自己的云环境中运行数据面，同时保留 TiDB Cloud 的全托管体验。"
+      ja: "TiDB Cloud BYOC (Bring Your Own Cloud) は、TiDB Cloud のフルマネージドな体験を維持しながら、お客様自身のクラウド環境でデータプレーンを実行できるエンタープライズ向けソリューションです。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidbcloud"
+    target_subdir: "tidbcloud/byoc"
+
   tidbcloud_lake:
     product_name:
       en: "TiDB Cloud Lake"
@@ -67,6 +91,18 @@ products:
       ja: "TiDB Cloud Lake は、分析ワークロード向けのクラウドネイティブなデータウェアハウスサービスです。コンピュートとストレージを分離し、ANSI SQL、半構造化データ処理、AI 向けのワークフローをサポートしています。"
     base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidbcloudlake/"
     target_subdir: "tidbcloudlake"
+
+  tidbcloud_filesystem:
+    product_name:
+      en: "TiDB Cloud Filesystem"
+      zh: "TiDB Cloud Filesystem"
+      ja: "TiDB Cloud Filesystem"
+    product_description:
+      en: "TiDB Cloud Filesystem is persistent, shared file storage that applications, automation, and AI agents can access across machines and sessions."
+      zh: "TiDB Cloud Filesystem 提供持久化的共享文件存储服务，支持应用程序、自动化工具和 AI 智能体跨机器、跨会话访问文件。"
+      ja: "TiDB Cloud Filesystem は、アプリケーション、自動化、AI エージェントが異なるマシンやセッション間でアクセスできる、永続的な共有ファイルストレージです。"
+    base_url_pattern: "https://docs.pingcap.com/{lang_prefix}tidbcloud-filesystem"
+    target_subdir: "tidbcloud-filesystem"
 
   tidb_self_managed:
     product_name:
@@ -181,15 +217,24 @@ toc_sources:
   tidbcloud_starter:
     - toc_relative_path: "tidbcloud/master/TOC-tidb-cloud-starter.md"
       languages: ["en", "zh", "ja"]
+  tidbcloud_starter_postgresql:
+    - toc_relative_path: "tidb/release-8.5/TOC-tidb-cloud-starter-postgresql.md"
+      languages: ["en", "zh", "ja"]
   tidbcloud_essential:
     - toc_relative_path: "tidbcloud/master/TOC-tidb-cloud-essential.md"
       languages: ["en", "zh", "ja"]
   tidbcloud_premium:
     - toc_relative_path: "tidbcloud/master/TOC-tidb-cloud-premium.md"
       languages: ["en", "zh", "ja"]
+  tidbcloud_byoc:
+    - toc_relative_path: "tidb/release-8.5/TOC-tidb-cloud-byoc.md"
+      languages: ["en", "zh", "ja"]
   tidbcloud_lake:
     - toc_relative_path: "tidb-cloud-lake/master/TOC-tidb-cloud-lake.md"
       languages: ["en", "zh"]
+  tidbcloud_filesystem:
+    - toc_relative_path: "tidb-cloud-filesystem/master/TOC-tidb-cloud-filesystem.md"
+      languages: ["en", "zh", "ja"]
   tidb_self_managed:
     - toc_relative_path: "tidb/release-8.5/TOC.md"
       languages: ["en", "zh", "ja"]
