@@ -15,11 +15,16 @@ concurrency:
 
 jobs:
   generate-llms-txt:
+    if: github.repository == 'pingcap/docs-toolkit' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    outputs:
+      source-sha: ${{ steps.docs-staging.outputs.sha }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout docs-toolkit
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Checkout docs-staging input
         uses: actions/checkout@v6
@@ -61,6 +66,62 @@ jobs:
           LLMS_WORKING_DIR: ${{ github.workspace }}/llms-workspace
         run: llms-txt-generator/.venv/bin/python llms-txt-generator/generate_llms_txt.py
 
+      - name: Upload generated llms.txt files
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-llms-txt
+          path: llms-workspace/website-docs/static/**/llms.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-llms-txt:
+    needs: generate-llms-txt
+    environment: docs-automation
+    if: github.repository == 'pingcap/docs-toolkit' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout website-docs target
+        uses: actions/checkout@v6
+        with:
+          repository: pingcap/website-docs
+          ref: master
+          path: llms-workspace/website-docs
+          persist-credentials: false
+          sparse-checkout: static
+
+      - name: Download generated llms.txt files
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-llms-txt
+          path: llms-payload
+
+      - name: Validate and apply generated data
+        run: |
+          python3 - <<'PYTHON'
+          from pathlib import Path
+
+          payload = Path("llms-payload")
+          target = Path("llms-workspace/website-docs/static")
+          files = []
+          for path in payload.rglob("*"):
+              if path.is_symlink():
+                  raise SystemExit("Symlink artifacts are not allowed")
+              if path.is_dir():
+                  continue
+              relative = path.relative_to(payload)
+              if not path.is_file() or path.name != "llms.txt" or any(part.startswith(".") for part in relative.parts):
+                  raise SystemExit("Artifact must contain only llms.txt data files")
+              dest = target / relative
+              if any(parent.is_symlink() for parent in (dest, *dest.parents)):
+                  raise SystemExit("Symlink destinations are not allowed")
+              files.append((path, dest))
+          if not files:
+              raise SystemExit("No llms.txt files found")
+          for source, dest in files:
+              dest.parent.mkdir(parents=True, exist_ok=True)
+              dest.write_bytes(source.read_bytes())
+          PYTHON
+
       - name: Create website-docs GitHub App token
         id: website-docs-token
         uses: actions/create-github-app-token@v3
@@ -92,7 +153,7 @@ jobs:
 
             Do not commit manual edits to this branch. It is regenerated and may be overwritten by subsequent workflow runs.
 
-            Input content: [`pingcap/docs-staging@${{ steps.docs-staging.outputs.sha }}`](https://github.com/pingcap/docs-staging/commit/${{ steps.docs-staging.outputs.sha }})
+            Input content: [`pingcap/docs-staging@${{ needs.generate-llms-txt.outputs.source-sha }}`](https://github.com/pingcap/docs-staging/commit/${{ needs.generate-llms-txt.outputs.source-sha }})
 
       - name: Summarize pull request result
         env:

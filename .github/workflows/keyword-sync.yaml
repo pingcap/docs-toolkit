@@ -20,6 +20,7 @@ concurrency:
 
 jobs:
   plan-branches:
+    if: github.repository == 'pingcap/docs-toolkit' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
     outputs:
       branches: ${{ steps.branches.outputs.branches }}
@@ -28,6 +29,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           path: docs-toolkit
+          persist-credentials: false
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v8.0.0
@@ -42,12 +44,21 @@ jobs:
           BRANCH: ${{ github.event.inputs.branch }}
         run: |
           set -euo pipefail
-          if [ -n "${BRANCH}" ]; then
-            BRANCHES="[\"${BRANCH}\"]"
-          else
-            BRANCHES="$(uv run --python 3.12 python -m keyword_sync.cli --list-branches)"
-          fi
-          echo "branches=${BRANCHES}" >> "$GITHUB_OUTPUT"
+          python3 - <<'PYTHON'
+          import json
+          import os
+          import subprocess
+
+          configured = json.loads(subprocess.check_output(
+              ["uv", "run", "--python", "3.12", "python", "-m", "keyword_sync.cli", "--list-branches"],
+              text=True,
+          ))
+          branch = os.environ["BRANCH"]
+          if branch and branch not in configured:
+              raise SystemExit("branch must match a configured keyword-sync branch")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write("branches=" + json.dumps([branch] if branch else configured) + "\n")
+          PYTHON
 
   keyword-sync:
     needs: plan-branches
@@ -61,6 +72,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           path: docs-toolkit
+          persist-credentials: false
 
       - name: Checkout TiDB source
         uses: actions/checkout@v6
@@ -93,24 +105,11 @@ jobs:
           version: "0.11.7"
           python-version: "3.12"
 
-      - name: Create GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ secrets.KEYWORD_SYNC_APP_CLIENT_ID }}
-          private-key: ${{ secrets.KEYWORD_SYNC_APP_PRIVATE_KEY }}
-          owner: pingcap
-          repositories: |
-            docs
-            docs-cn
-            docs-toolkit
-          permission-contents: write
-          permission-pull-requests: write
-
       - name: Run keyword sync
         id: metadata
         working-directory: docs-toolkit
         env:
+          BRANCH: ${{ matrix.branch }}
           GH_TOKEN: ${{ github.token }}
           TIDB_WORKING_DIR: ${{ github.workspace }}/tidb
           DOCS_WORKING_DIR: ${{ github.workspace }}/docs
@@ -118,17 +117,118 @@ jobs:
         run: |
           set -euo pipefail
           META_DIR="${RUNNER_TEMP}/keyword-sync"
-          BRANCH="${{ matrix.branch }}"
           uv run --python 3.12 python -m keyword_sync.cli \
             --branch "${BRANCH}" \
             --metadata-dir "${META_DIR}"
-          cat "${META_DIR}/outputs.env" >> "$GITHUB_OUTPUT"
+          mkdir -p "${RUNNER_TEMP}/keyword-payload"
+          cp ../docs/keywords.md "${RUNNER_TEMP}/keyword-payload/docs-keywords.md"
+          cp ../docs-cn/keywords.md "${RUNNER_TEMP}/keyword-payload/docs-cn-keywords.md"
+          cp keyword_sync/data/keyword-sync-state.json "${RUNNER_TEMP}/keyword-payload/keyword-sync-state.json"
+          cp "${META_DIR}/"*.md "${META_DIR}/outputs.env" "${RUNNER_TEMP}/keyword-payload/"
+
+      - name: Upload generated keyword files
+        uses: actions/upload-artifact@v4
+        with:
+          name: keyword-sync-${{ matrix.branch }}
+          path: ${{ runner.temp }}/keyword-payload
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-keywords:
+    needs: [plan-branches, keyword-sync]
+    environment: docs-automation
+    if: github.repository == 'pingcap/docs-toolkit' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJson(needs.plan-branches.outputs.branches) }}
+    steps:
+      # Use fresh checkouts; never restore a generator workspace or execute its artifacts.
+      - name: Checkout docs toolkit state
+        uses: actions/checkout@v6
+        with:
+          path: docs-toolkit
+          persist-credentials: false
+          sparse-checkout: keyword_sync/data
+
+      - name: Checkout docs target
+        uses: actions/checkout@v6
+        with:
+          repository: pingcap/docs
+          ref: ${{ matrix.branch }}
+          path: docs
+          persist-credentials: false
+
+      - name: Checkout docs-cn target
+        uses: actions/checkout@v6
+        with:
+          repository: pingcap/docs-cn
+          ref: ${{ matrix.branch }}
+          path: docs-cn
+          persist-credentials: false
+
+      - name: Download generated keyword files
+        uses: actions/download-artifact@v4
+        with:
+          name: keyword-sync-${{ matrix.branch }}
+          path: keyword-payload
+
+      - name: Validate and apply generated data
+        id: metadata
+        run: |
+          python3 - <<'PYTHON'
+          import os
+          from pathlib import Path
+          import re
+
+          payload = Path("keyword-payload")
+          files = {
+              "docs-keywords.md", "docs-cn-keywords.md", "keyword-sync-state.json",
+              "docs-pr-body.md", "docs-pr-comment.md",
+              "docs_cn-pr-body.md", "docs_cn-pr-comment.md", "outputs.env",
+          }
+          if {p.name for p in payload.iterdir()} != files:
+              raise SystemExit("Unexpected artifact contents")
+          if any(p.is_symlink() or not p.is_file() for p in payload.iterdir()):
+              raise SystemExit("Artifacts must contain only regular data files")
+          # Read only validated commit IDs; never source generated shell or output paths.
+          metadata = dict(line.split("=", 1) for line in (payload / "outputs.env").read_text().splitlines())
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              for target in ("docs", "docs_cn"):
+                  sha = metadata[f"{target}_source_commit"]
+                  if not re.fullmatch(r"[0-9a-f]{12}|none", sha):
+                      raise SystemExit("Invalid source commit")
+                  output.write(f"{target}_source_commit={sha}\n")
+                  has_comment = bool((payload / f"{target}-pr-comment.md").read_text().strip())
+                  output.write(f"{target}_has_comment={str(has_comment).lower()}\n")
+          for source, dest in (
+              ("docs-keywords.md", "docs/keywords.md"),
+              ("docs-cn-keywords.md", "docs-cn/keywords.md"),
+              ("keyword-sync-state.json", "docs-toolkit/keyword_sync/data/keyword-sync-state.json"),
+          ):
+              destination = Path(dest)
+              if any(p.is_symlink() for p in (destination, *destination.parents)):
+                  raise SystemExit("Symlink destinations are not allowed")
+              destination.write_bytes((payload / source).read_bytes())
+          PYTHON
+
+      - name: Create docs GitHub App token
+        id: docs-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.KEYWORD_SYNC_APP_CLIENT_ID }}
+          private-key: ${{ secrets.KEYWORD_SYNC_APP_PRIVATE_KEY }}
+          owner: pingcap
+          repositories: docs
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Create docs pull request
         id: docs-pr
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ steps.docs-token.outputs.token }}
           path: docs
           add-paths: keywords.md
           base: ${{ matrix.branch }}
@@ -137,13 +237,24 @@ jobs:
           sign-commits: true
           commit-message: "docs: sync keywords from TiDB parser"
           title: "docs: sync keywords from TiDB parser"
-          body-path: ${{ steps.metadata.outputs.docs_body_path }}
+          body-path: keyword-payload/docs-pr-body.md
+
+      - name: Create docs-cn GitHub App token
+        id: docs-cn-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.KEYWORD_SYNC_APP_CLIENT_ID }}
+          private-key: ${{ secrets.KEYWORD_SYNC_APP_PRIVATE_KEY }}
+          owner: pingcap
+          repositories: docs-cn
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Create docs-cn pull request
         id: docs-cn-pr
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ steps.docs-cn-token.outputs.token }}
           path: docs-cn
           add-paths: keywords.md
           base: ${{ matrix.branch }}
@@ -152,13 +263,36 @@ jobs:
           sign-commits: true
           commit-message: "docs: sync keywords from TiDB parser"
           title: "docs: sync keywords from TiDB parser"
-          body-path: ${{ steps.metadata.outputs.docs_cn_body_path }}
+          body-path: keyword-payload/docs_cn-pr-body.md
+
+      - name: Check for state changes
+        id: state
+        working-directory: docs-toolkit
+        run: |
+          if git diff --quiet -- keyword_sync/data/keyword-sync-state.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create docs-toolkit GitHub App token
+        if: steps.state.outputs.changed == 'true'
+        id: state-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.KEYWORD_SYNC_APP_CLIENT_ID }}
+          private-key: ${{ secrets.KEYWORD_SYNC_APP_PRIVATE_KEY }}
+          owner: pingcap
+          repositories: docs-toolkit
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Persist keyword sync state
+        if: steps.state.outputs.changed == 'true'
         id: state-pr
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ steps.state-token.outputs.token }}
           path: docs-toolkit
           add-paths: keyword_sync/data/keyword-sync-state.json
           base: ${{ github.ref_name }}
@@ -175,23 +309,24 @@ jobs:
             - docs-cn: ${{ steps.docs-cn-pr.outputs.pull-request-url || 'no changes' }}
 
       - name: Comment on docs pull request
-        if: steps.docs-pr.outputs.pull-request-url != '' && steps.metadata.outputs.docs_cc_list != ''
+        if: steps.docs-pr.outputs.pull-request-url != '' && steps.metadata.outputs.docs_has_comment == 'true'
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.docs-token.outputs.token }}
           PR_URL: ${{ steps.docs-pr.outputs.pull-request-url }}
-          COMMENT_PATH: ${{ steps.metadata.outputs.docs_comment_path }}
+          COMMENT_PATH: keyword-payload/docs-pr-comment.md
         run: gh pr comment "${PR_URL}" --body-file "${COMMENT_PATH}"
 
       - name: Comment on docs-cn pull request
-        if: steps.docs-cn-pr.outputs.pull-request-url != '' && steps.metadata.outputs.docs_cn_cc_list != ''
+        if: steps.docs-cn-pr.outputs.pull-request-url != '' && steps.metadata.outputs.docs_cn_has_comment == 'true'
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.docs-cn-token.outputs.token }}
           PR_URL: ${{ steps.docs-cn-pr.outputs.pull-request-url }}
-          COMMENT_PATH: ${{ steps.metadata.outputs.docs_cn_comment_path }}
+          COMMENT_PATH: keyword-payload/docs_cn-pr-comment.md
         run: gh pr comment "${PR_URL}" --body-file "${COMMENT_PATH}"
 
       - name: Summarize pull request result
         env:
+          BRANCH: ${{ matrix.branch }}
           DOCS_PR_URL: ${{ steps.docs-pr.outputs.pull-request-url }}
           DOCS_CN_PR_URL: ${{ steps.docs-cn-pr.outputs.pull-request-url }}
           STATE_PR_URL: ${{ steps.state-pr.outputs.pull-request-url }}
@@ -199,7 +334,7 @@ jobs:
           {
             echo "## Keyword sync result"
             echo ""
-            echo "Branch: ${{ matrix.branch }}"
+            echo "Branch: ${BRANCH}"
             echo ""
             if [ -n "${DOCS_PR_URL}" ]; then
               echo "- docs PR: ${DOCS_PR_URL}"

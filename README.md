@@ -8,3 +8,5 @@ The unified toolkit for TiDB documentation. It integrates essential functions li
 - markdown-translator: AI-based translation tool for markdown files
 - llms-txt-generator: generates localized `llms.txt` documentation indexes and submits automated updates to [pingcap/website-docs](https://github.com/pingcap/website-docs)
 - keyword-sync: keeps TiDB keyword docs aligned with `pkg/parser/parser.y` changes. See [keyword_sync/README.md](keyword_sync/README.md).
+
+Before enabling automated publication, complete the environment protection and credential setup in [.github/AUTOMATION_SECURITY.md](.github/AUTOMATION_SECURITY.md).

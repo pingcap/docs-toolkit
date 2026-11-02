@@ -1,0 +1,36 @@
+name: Test docs automation security
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/keyword-sync.yaml
+      - .github/workflows/generate-llms-txt.yml
+      - .github/workflows/test-docs-automation-security.yml
+      - .github/tests/**
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/keyword-sync.yaml
+      - .github/workflows/generate-llms-txt.yml
+      - .github/workflows/test-docs-automation-security.yml
+      - .github/tests/**
+
+permissions:
+  contents: read
+
+jobs:
+  regression-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install test dependencies
+        run: python3 -m pip install -r .github/tests/requirements.txt
+      - name: Test dispatch and publication trust boundaries
+        run: python3 -m unittest discover -s .github/tests -v
