@@ -173,13 +173,19 @@ jobs:
           import re
 
           payload = Path("keyword-payload")
+          # Keep publication targets explicit; config changes must not expand this allowlist.
           files = {
               "docs-keywords.md", "docs-cn-keywords.md", "keyword-sync-state.json",
               "docs-pr-body.md", "docs-pr-comment.md",
               "docs_cn-pr-body.md", "docs_cn-pr-comment.md", "outputs.env",
           }
-          if {p.name for p in payload.iterdir()} != files:
-              raise SystemExit("Unexpected artifact contents")
+          actual_files = {p.name for p in payload.iterdir()}
+          if actual_files != files:
+              missing = sorted(files - actual_files)
+              unexpected = sorted(actual_files - files)
+              raise SystemExit(
+                  f"Unexpected artifact contents: missing={missing!r}, unexpected={unexpected!r}"
+              )
           if any(p.is_symlink() or not p.is_file() for p in payload.iterdir()):
               raise SystemExit("Artifacts must contain only regular data files")
           # Read only validated commit IDs; never source generated shell or output paths.
@@ -203,6 +209,7 @@ jobs:
               destination.write_bytes((payload / source).read_bytes())
           PYTHON
 
+      # LLMS_TXT_APP_* holds the shared pingcap-docs-app credentials for both workflows.
       - name: Create docs GitHub App token
         id: docs-token
         uses: actions/create-github-app-token@v3
