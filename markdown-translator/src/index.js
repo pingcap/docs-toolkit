@@ -7,8 +7,6 @@ import { createGlossaryMatcher } from "./glossary.js";
 import { loadVariables, variablesReplace } from "./variables.js";
 import { postProcessFileFrontmatterAliases } from "./frontmatterAliases.js";
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
 const copyable = /{{< copyable\s+(.+)\s+>}}\r?\n/g;
 const replaceDeprecatedContent = (path) => {
   const mdFileContent = fs.readFileSync(path).toString();
