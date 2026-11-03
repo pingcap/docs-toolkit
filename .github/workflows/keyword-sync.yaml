@@ -20,7 +20,6 @@ concurrency:
 
 jobs:
   plan-branches:
-    if: github.repository == 'pingcap/docs-toolkit' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
     outputs:
       branches: ${{ steps.branches.outputs.branches }}
@@ -44,21 +43,14 @@ jobs:
           BRANCH: ${{ github.event.inputs.branch }}
         run: |
           set -euo pipefail
-          python3 - <<'PYTHON'
-          import json
-          import os
-          import subprocess
-
-          configured = json.loads(subprocess.check_output(
-              ["uv", "run", "--python", "3.12", "python", "-m", "keyword_sync.cli", "--list-branches"],
-              text=True,
-          ))
-          branch = os.environ["BRANCH"]
-          if branch and branch not in configured:
-              raise SystemExit("branch must match a configured keyword-sync branch")
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              output.write("branches=" + json.dumps([branch] if branch else configured) + "\n")
-          PYTHON
+          CONFIGURED="$(uv run --python 3.12 python -m keyword_sync.cli --list-branches)"
+          BRANCHES="$(jq -ce --arg branch "$BRANCH" '
+            if $branch == "" then .
+            elif index($branch) != null then [$branch]
+            else error("branch must match a configured keyword-sync branch")
+            end
+          ' <<< "$CONFIGURED")"
+          echo "branches=${BRANCHES}" >> "$GITHUB_OUTPUT"
 
   keyword-sync:
     needs: plan-branches
@@ -106,7 +98,6 @@ jobs:
           python-version: "3.12"
 
       - name: Run keyword sync
-        id: metadata
         working-directory: docs-toolkit
         env:
           BRANCH: ${{ matrix.branch }}

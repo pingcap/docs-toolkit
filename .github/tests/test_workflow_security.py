@@ -44,7 +44,7 @@ class WorkflowSecurityTests(unittest.TestCase):
 
     def test_dispatch_allowlist_and_single_line_json_output(self):
         step = step_named(self.keyword, 'plan-branches', 'Resolve branches')
-        # Stub only the branch-list command; run the unchanged workflow shell/Python.
+        # Stub only the branch-list command; run the unchanged workflow script.
         binary = self.directory / 'uv'
         binary.write_text('#!/bin/sh\nprintf \'["master", "release-8.5"]\\n\'\n')
         binary.chmod(0o755)
