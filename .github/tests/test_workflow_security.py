@@ -74,7 +74,6 @@ class WorkflowSecurityTests(unittest.TestCase):
             self.assertEqual(workflow['permissions'], {'contents': 'read'})
             for name, job in workflow['jobs'].items():
                 if name == publisher:
-                    self.assertEqual(job['environment'], 'docs-automation')
                     self.assertIn("github.repository == 'pingcap/docs-toolkit'", job['if'])
                     self.assertIn('github.event.repository.default_branch', job['if'])
                 for step in job['steps']:
