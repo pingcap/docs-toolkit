@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -45,6 +47,7 @@ jobs:
           fi
 
           CREDENTIALS_FILE="$RUNNER_TEMP/gcp-key.json"
+          umask 077
           printf '%s' "${GCP_CREDENTIALS_B64}" | base64 --decode > "${CREDENTIALS_FILE}"
 
           echo "GOOGLE_APPLICATION_CREDENTIALS=${CREDENTIALS_FILE}" >> "$GITHUB_ENV"
@@ -115,6 +118,11 @@ jobs:
           node markdown-translator/src/index_ja.js \
             --input-dir "${{ steps.prepare.outputs.temp_input_dir }}" \
             --output-dir "${{ steps.prepare.outputs.output_dir }}"
+
+      - name: Remove translation credentials
+        if: always()
+        shell: bash
+        run: rm -f -- "$RUNNER_TEMP/gcp-key.json"
 
       - name: Show generated files
         shell: bash
