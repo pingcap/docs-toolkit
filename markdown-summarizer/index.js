@@ -1,4 +1,4 @@
-import { glob } from "glob";
+import { globSync } from "glob";
 import * as fs from "fs";
 import path from "path";
 import "dotenv/config";
@@ -39,7 +39,7 @@ const getMdFileList = (prefix) => {
   const fileFilter = process.env.FILE_FILTER
     ? process.env.FILE_FILTER.split(",")
     : [];
-  const files = glob.sync(prefix + ".md");
+  const files = globSync(prefix + ".md");
   return fileFilter.length
     ? files.filter((f) => fileFilter.includes(f))
     : files;

@@ -19,6 +19,6 @@
   "homepage": "https://github.com/shhdgit/doc-summarizer#readme",
   "dependencies": {
     "dotenv": "^16.3.1",
-    "glob": "^11.0.3"
+    "glob": "^14.0.3"
   }
 }
