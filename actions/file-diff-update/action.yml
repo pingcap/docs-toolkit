@@ -37,15 +37,20 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
+        CONFIG_FILE: ${{ inputs.config_file }}
+        WORKING_DIRECTORY: ${{ inputs.working_directory }}
+        FILTER_BY_CLOUD_TOC: ${{ inputs.filter_by_cloud_toc }}
+        FOLDER: ${{ inputs.folder }}
+        FILES: ${{ inputs.files }}
       run: |
-        ARGS=(--config "${{ inputs.config_file }}" --working-dir "${{ inputs.working_directory }}")
-        if [ "${{ inputs.filter_by_cloud_toc }}" == "true" ]; then
+        ARGS=(--config "$CONFIG_FILE" --working-dir "$WORKING_DIRECTORY")
+        if [ "$FILTER_BY_CLOUD_TOC" == "true" ]; then
           ARGS+=(--filter-by-cloud-toc)
         fi
-        if [ -n "${{ inputs.files }}" ]; then
-          ARGS+=(--files "${{ inputs.files }}")
+        if [ -n "$FILES" ]; then
+          ARGS+=(--files "$FILES")
         fi
-        if [ -n "${{ inputs.folder }}" ]; then
-          ARGS+=(--folder "${{ inputs.folder }}")
+        if [ -n "$FOLDER" ]; then
+          ARGS+=(--folder "$FOLDER")
         fi
-        node ${{ github.action_path }}/index.js "${ARGS[@]}"
+        node "${{ github.action_path }}/index.js" "${ARGS[@]}"
