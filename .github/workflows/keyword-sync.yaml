@@ -25,13 +25,13 @@ jobs:
       branches: ${{ steps.branches.outputs.branches }}
     steps:
       - name: Checkout docs toolkit
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           path: docs-toolkit
           persist-credentials: false
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@v8.0.0
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
         with:
           version: "0.11.7"
           python-version: "3.12"
@@ -61,13 +61,13 @@ jobs:
         branch: ${{ fromJson(needs.plan-branches.outputs.branches) }}
     steps:
       - name: Checkout docs toolkit
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           path: docs-toolkit
           persist-credentials: false
 
       - name: Checkout TiDB source
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           repository: pingcap/tidb
           ref: ${{ matrix.branch }}
@@ -76,7 +76,7 @@ jobs:
           persist-credentials: false
 
       - name: Checkout docs target
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           repository: pingcap/docs
           ref: ${{ matrix.branch }}
@@ -84,7 +84,7 @@ jobs:
           persist-credentials: false
 
       - name: Checkout docs-cn target
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           repository: pingcap/docs-cn
           ref: ${{ matrix.branch }}
@@ -92,7 +92,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@v8.0.0
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
         with:
           version: "0.11.7"
           python-version: "3.12"
@@ -118,7 +118,7 @@ jobs:
           cp "${META_DIR}/"*.md "${META_DIR}/outputs.env" "${RUNNER_TEMP}/keyword-payload/"
 
       - name: Upload generated keyword files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: keyword-sync-${{ matrix.branch }}
           path: ${{ runner.temp }}/keyword-payload
@@ -136,14 +136,14 @@ jobs:
     steps:
       # Use fresh checkouts; never restore a generator workspace or execute its artifacts.
       - name: Checkout docs toolkit state
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           path: docs-toolkit
           persist-credentials: false
           sparse-checkout: keyword_sync/data
 
       - name: Checkout docs target
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           repository: pingcap/docs
           ref: ${{ matrix.branch }}
@@ -151,7 +151,7 @@ jobs:
           persist-credentials: false
 
       - name: Checkout docs-cn target
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           repository: pingcap/docs-cn
           ref: ${{ matrix.branch }}
@@ -159,7 +159,7 @@ jobs:
           persist-credentials: false
 
       - name: Download generated keyword files
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: keyword-sync-${{ matrix.branch }}
           path: keyword-payload
@@ -212,7 +212,7 @@ jobs:
       # LLMS_TXT_APP_* holds the shared pingcap-docs-app credentials for both workflows.
       - name: Create docs GitHub App token
         id: docs-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
         with:
           client-id: ${{ secrets.LLMS_TXT_APP_CLIENT_ID }}
           private-key: ${{ secrets.LLMS_TXT_APP_PRIVATE_KEY }}
@@ -223,7 +223,7 @@ jobs:
 
       - name: Create docs pull request
         id: docs-pr
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
           token: ${{ steps.docs-token.outputs.token }}
           path: docs
@@ -238,7 +238,7 @@ jobs:
 
       - name: Create docs-cn GitHub App token
         id: docs-cn-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
         with:
           client-id: ${{ secrets.LLMS_TXT_APP_CLIENT_ID }}
           private-key: ${{ secrets.LLMS_TXT_APP_PRIVATE_KEY }}
@@ -249,7 +249,7 @@ jobs:
 
       - name: Create docs-cn pull request
         id: docs-cn-pr
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
           token: ${{ steps.docs-cn-token.outputs.token }}
           path: docs-cn
@@ -275,7 +275,7 @@ jobs:
       - name: Create docs-toolkit GitHub App token
         if: steps.state.outputs.changed == 'true'
         id: state-token
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
         with:
           client-id: ${{ secrets.LLMS_TXT_APP_CLIENT_ID }}
           private-key: ${{ secrets.LLMS_TXT_APP_PRIVATE_KEY }}
@@ -287,7 +287,7 @@ jobs:
       - name: Persist keyword sync state
         if: steps.state.outputs.changed == 'true'
         id: state-pr
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
           token: ${{ steps.state-token.outputs.token }}
           path: docs-toolkit
